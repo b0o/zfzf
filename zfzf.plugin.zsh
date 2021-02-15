@@ -169,7 +169,7 @@ function _zfzf () {
   zle reset-prompt
 
   if [[ "$key" =~ ^alt-[uUoP]$ || ( "$key" == "alt-i" && ( ! -e "$path_new" || -d "$path_new" ) ) ]]; then
-    _smart_fzf
+    _zfzf
   fi
 }
 
