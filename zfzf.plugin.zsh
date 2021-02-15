@@ -59,8 +59,6 @@ function _zfzf () {
     fi
   fi
 
-  path_orig="${path_orig:-.}"
-
   path_orig=${~path_orig}     # expand tilde
   path_orig="${(e)path_orig}" # expand variables
 
@@ -70,7 +68,7 @@ function _zfzf () {
     path_orig_absolute="$path_orig"
     relative="/"
   else
-    path_orig_absolute="$(realpath -m "$path_orig")"
+    path_orig_absolute="$(realpath -m "${path_orig:-.}")"
   fi
 
   local fzf_preview=(
@@ -104,6 +102,7 @@ function _zfzf () {
 
   local path_new
   local query key match
+  local -i esc=0
   case $code in
   0|1|130)
     query="$(head -1 <<<"$res")"
@@ -135,6 +134,7 @@ function _zfzf () {
 
   # Interrupted with CTRL-C or ESC
   130)
+    esc=1
     path_new=""
     ;;
 
@@ -144,8 +144,9 @@ function _zfzf () {
     ;;
   esac
 
-  if [[ "$key" != "alt-o" ]]; then
-    path_new="$(realpath -m --relative-to="$relative" "${path_orig:+$path_orig/}${path_new}")"
+  if [[ "$key" != "alt-o" && $esc -eq 0 ]]; then
+    path_new="${path_orig:+$path_orig/}${path_new}"
+    path_new="$(realpath -m --relative-to="$relative" "${path_new:-.}")"
 
     if [[ "$key" == "alt-U" ]]; then
       local -i c_u_once=0
@@ -162,6 +163,10 @@ function _zfzf () {
 
   if [[ "$key" == "alt-return" || "$key" == "ctrl-g" ]]; then
     path_new="$(realpath -m "$path_new")"
+  fi
+
+  if [[ $esc -eq 1 && -z "$path_new" && -n "$path_orig" ]]; then
+    path_new="$path_orig"
   fi
 
   LBUFFER="${left}${path_new}"
