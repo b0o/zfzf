@@ -80,32 +80,31 @@ function _zfzf () {
     path_orig_absolute="$(dirname "$path_orig_absolute")"
   fi
 
-  local fzf_preview=(
-    'f="$(realpath -m "'"$path_orig_absolute"'/{}")";'
-    'bat --color always "$f" 2>/dev/null || exa --tree --level=1 --color=always "$f" 2>/dev/null || stat "$f" 2>/dev/null'
-  )
-
   LBUFFER="${left}${path_orig}"
   zle reset-prompt
+
+  local color="never"
+  if [[ "${ZFZF_NO_COLORS:-0}" -eq 0 ]]; then
+    color="always"
+  fi
+
+  local -a fzf_preview=(
+    'f="$(realpath -m "'"$path_orig_absolute"'/{}")";'
+    'bat --color='"$color"' "$f" 2>/dev/null || exa --tree --level=1 --color='"$color"' "$f" 2>/dev/null || stat "$f" 2>/dev/null'
+  )
+
+  local -a find_opts=("$path_orig_absolute" -mindepth 1 -maxdepth 1)
 
   local res
   res="$(
     {
-      {
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type b -or -type c -printf "${fg_bold[yellow]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type f -not -executable -printf "${fg_no_bold[default]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type f -executable -printf "${fg_no_bold[green]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type l -printf "${fg_no_bold[cyan]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type p -printf "${fg_no_bold[yellow]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type s -printf "${fg_bold[magenta]}%f${reset_color}\\n";
-        find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -not '(' -type b -or -type c -or -type f -or -type l -or -type p -or -type s -or -type d ')' -printf "${fg_no_bold[red]}%f${reset_color}\\n";
-      } | sort -k 1.8 # The '-k 1.8' argument tells sort to skip the first 8 characters of each line, which happens to be the length of the ANSI color code escape sequences
-      find "$path_orig_absolute" -mindepth 1 -maxdepth 1 -type d -printf "${fg_bold[blue]}%f${reset_color}\\n";
-      printf "${fg_bold[white]}%s${reset_color}\n" "." ".."
+      echo -e ".\n.."
+      ls -1A --group-directories-first --color="$color"
     } 2>/dev/null \
       | fzf \
-          --reverse --no-sort --ansi --height='50%' --header="$path_orig_absolute" \
-          --query="$fzf_query" --print-query --cycle \
+          --tac --reverse --no-sort --ansi --height='50%' \
+          --header="$path_orig_absolute" --query="$fzf_query" \
+          --print-query --cycle \
           --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U' \
           --bind='ctrl-o:replace-query,tab:down,btab:up,alt-n:down,alt-p:up' \
           --preview="bash -c '${fzf_preview[*]}'")"
