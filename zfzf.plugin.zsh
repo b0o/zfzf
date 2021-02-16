@@ -24,6 +24,7 @@
 #   - esc:               escape
 #   - ctrl-g:            escape (absolute)
 #   - alt-o:             accept query
+#   - ctrl-d:            accept query final
 #   - alt-P              append query
 #   - ctrl-o:            replace query
 #   - alt-i:             descend into directory or accept file
@@ -40,25 +41,26 @@
 function _zfzf () {
   local left="$LBUFFER"
   local right="$RBUFFER"
-  local path_orig="$*"
-  if [[ -z "$path_orig" && -n "$BUFFER" ]]; then
+  local input="$*"
+  if [[ -z "$input" && -n "$BUFFER" ]]; then
     zmodload -e zsh/pcre || zmodload zsh/pcre
 
     # Split before word adjacent to the left of the cursor
     pcre_compile -- '^(?U)((.*\s+)*)((\S|\\\s)+)$'
     if [[ -n "$LBUFFER" ]] && pcre_match -a mat -- "$LBUFFER"; then
-      path_orig="${mat[3]//(#m)\\/}"
-      left="${LBUFFER:0:$((${#LBUFFER} - ${#path_orig}))}"
+      input="${mat[3]//(#m)\\/}"
+      left="${LBUFFER:0:$((${#LBUFFER} - ${#input}))}"
     fi
 
     # Split after word adjacent to the right of the cursor
     pcre_compile -- '^((\\\s|\S)+)((\s+.*)*)$'
     if [[ -n "$RBUFFER" ]] && pcre_match -a mat -- "$RBUFFER"; then
       right="${mat[3]}"
-      path_orig="${path_orig}${mat[1]//(#m)\\/}"
+      input="${input}${mat[1]//(#m)\\/}"
     fi
   fi
 
+  local path_orig="${input:-}"
   path_orig=${~path_orig}     # expand tilde
   path_orig="${(e)path_orig}" # expand variables
 
@@ -71,10 +73,20 @@ function _zfzf () {
     path_orig_absolute="$(realpath -m "${path_orig:-.}")"
   fi
 
+  local fzf_query=""
+  if ! [[ -e "$path_orig_absolute" ]]; then
+    fzf_query="$(basename "$path_orig")"
+    path_orig="$(dirname "$path_orig")"
+    path_orig_absolute="$(dirname "$path_orig_absolute")"
+  fi
+
   local fzf_preview=(
     'f="$(realpath -m "'"$path_orig_absolute"'/{}")";'
     'bat --color always "$f" 2>/dev/null || exa --tree --level=1 --color=always "$f" 2>/dev/null || stat "$f" 2>/dev/null'
   )
+
+  LBUFFER="${left}${path_orig}"
+  zle reset-prompt
 
   local res
   res="$(
@@ -93,8 +105,8 @@ function _zfzf () {
     } 2>/dev/null \
       | fzf \
           --reverse --no-sort --ansi --height='50%' --header="$path_orig_absolute" \
-          --print-query --cycle \
-          --expect='alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U' \
+          --query="$fzf_query" --print-query --cycle \
+          --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U' \
           --bind='ctrl-o:replace-query,tab:down,btab:up,alt-n:down,alt-p:up' \
           --preview="bash -c '${fzf_preview[*]}'")"
 
@@ -107,6 +119,7 @@ function _zfzf () {
   0|1|130)
     query="$(head -1 <<<"$res")"
     ;|
+
   0|1)
     key="$(head -2 <<<"$res" | tail -1)"
 
@@ -114,7 +127,7 @@ function _zfzf () {
     "alt-u")
       path_new=".."
       ;;
-    "alt-o"|"alt-P")
+    "ctrl-d"|"alt-o"|"alt-P")
       path_new="${query:-}"
       ;;
     "alt-U"|"ctrl-g")
@@ -144,14 +157,14 @@ function _zfzf () {
     ;;
   esac
 
-  if [[ "$key" != "alt-o" && $esc -eq 0 ]]; then
+  if [[ "$key" != "alt-o" && "$key" != "ctrl-d" && $esc -eq 0 ]]; then
     path_new="${path_orig:+$path_orig/}${path_new}"
     path_new="$(realpath -m --relative-to="$relative" "${path_new:-.}")"
 
     if [[ "$key" == "alt-U" ]]; then
-      local -i c_u_once=0
-      while [[ $c_u_once -eq 0 || ! -e "$path_new" ]]; do
-        c_u_once=1
+      local -i alt_u_once=0 # we want the following loop to run at least once
+      while [[ $alt_u_once -eq 0 || ! -e "$path_new" ]]; do
+        alt_u_once=1
         path_new="$(realpath -m --relative-to="$relative" "${path_new}/..")"
       done
     fi
@@ -165,8 +178,8 @@ function _zfzf () {
     path_new="$(realpath -m "$path_new")"
   fi
 
-  if [[ $esc -eq 1 && -z "$path_new" && -n "$path_orig" ]]; then
-    path_new="$path_orig"
+  if [[ $esc -eq 1 && -z "$path_new" && -n "$input" ]]; then
+    path_new="$input"
   fi
 
   LBUFFER="${left}${path_new}"
@@ -180,6 +193,6 @@ function _zfzf () {
 
 zle -N zfzf _zfzf
 
-if ! [[ -v ZFZF_DISABLE_BINDINGS && "$ZFZF_DISABLE_BINDINGS" -eq 1 ]]; then
+if [[ "${ZFZF_DISABLE_BINDINGS:-0}" -eq 0 ]]; then
   bindkey "^[." zfzf
 fi
