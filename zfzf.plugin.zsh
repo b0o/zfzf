@@ -93,13 +93,11 @@ function _zfzf () {
     'bat --color='"$color"' "$f" 2>/dev/null || exa --tree --level=1 --color='"$color"' "$f" 2>/dev/null || stat "$f" 2>/dev/null'
   )
 
-  local -a find_opts=("$path_orig_absolute" -mindepth 1 -maxdepth 1)
-
   local res
   res="$(
     {
       echo -e ".\n.."
-      ls -1A --group-directories-first --color="$color"
+      ls -1A --group-directories-first --color="$color" "$path_orig_absolute"
     } 2>/dev/null \
       | fzf \
           --tac --reverse --no-sort --ansi --height='50%' \
