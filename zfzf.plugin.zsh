@@ -96,8 +96,8 @@ function _zfzf () {
   local res
   res="$(
     {
-      echo -e ".\n.."
       ls -1A --group-directories-first --color="$color" "$path_orig_absolute"
+      echo -e "..\n."
     } 2>/dev/null \
       | fzf \
           --tac --reverse --no-sort --ansi --height='50%' \
