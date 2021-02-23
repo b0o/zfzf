@@ -100,7 +100,7 @@ function _zfzf () {
       echo -e "..\n."
     } 2>/dev/null \
       | fzf \
-          --tac --reverse --no-sort --ansi --height='50%' \
+          --tac --reverse --ansi --height='50%' \
           --header="$path_orig_absolute" --query="$fzf_query" \
           --print-query --cycle \
           --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U' \
