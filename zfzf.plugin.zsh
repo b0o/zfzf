@@ -28,7 +28,9 @@
 #   - alt-P              append query
 #   - ctrl-o:            replace query
 #   - alt-i:             descend into directory or accept file
+#   - alt-.:             descend into directory or accept file
 #   - alt-u:             ascend into parent directory
+#   - alt->:             ascend into parent directory
 #   - alt-U              ascend to next existing ancestor
 #   - ctrl-n:            next
 #   - alt-n:             next
@@ -103,7 +105,7 @@ function _zfzf () {
           --tac --reverse --ansi --height='50%' \
           --header="$path_orig_absolute" --query="$fzf_query" \
           --print-query --cycle \
-          --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U' \
+          --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U,alt-.,alt->' \
           --bind='ctrl-o:replace-query,tab:down,btab:up,alt-n:down,alt-p:up' \
           --preview="bash -c '${fzf_preview[*]}'")"
 
@@ -121,7 +123,7 @@ function _zfzf () {
     key="$(head -2 <<<"$res" | tail -1)"
 
     case "${key:-}" in
-    "alt-u")
+    "alt-u"|"alt->")
       path_new=".."
       ;;
     "ctrl-d"|"alt-o"|"alt-P")
@@ -183,7 +185,7 @@ function _zfzf () {
   RBUFFER="$right"
   zle reset-prompt
 
-  if [[ "$key" =~ ^alt-[uUoP]$ || ( "$key" == "alt-i" && ( ! -e "$path_new" || -d "$path_new" ) ) ]]; then
+  if [[ "$key" =~ ^alt-[uUoP\>]$ || ( "$key" =~ ^alt-[i.]$ && ( ! -e "$path_new" || -d "$path_new" ) ) ]]; then
     _zfzf
   fi
 }
