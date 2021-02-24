@@ -32,14 +32,14 @@
 #   - alt-u:             ascend into parent directory
 #   - alt->:             ascend into parent directory
 #   - alt-U              ascend to next existing ancestor
-#   - ctrl-n:            next
-#   - alt-n:             next
-#   - tab:               next
-#   - down:              next
-#   - ctrl-p:            prev
-#   - alt-p:             prev
-#   - shift-tab:         prev
-#   - up:                prev
+#   - ctrl-n:            select next
+#   - alt-n:             select next
+#   - tab:               select next
+#   - down:              select next
+#   - ctrl-p:            select prev
+#   - alt-p:             select prev
+#   - shift-tab:         select prev
+#   - up:                select prev
 function _zfzf () {
   local left="$LBUFFER"
   local right="$RBUFFER"
