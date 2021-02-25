@@ -24,6 +24,15 @@
 - alt-U         ascend to next existing ancestor
 ```
 
+## TODO
+
+- [ ] configurable options
+  - [ ] key bindings
+  - [ ] sorting
+  - [ ] filtering
+  - [ ] color
+  - [ ] fzf options
+
 ## License
 
 &copy; 2021 Maddison Hellstrom
