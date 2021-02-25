@@ -6,6 +6,13 @@
 
 ![demonstration screencast](./assets/demo-01.gif)
 
+## Install
+
+```zsh
+# zinit
+zinit light b0o/zfzf
+```
+
 ## Key Bindings
 
 ```
