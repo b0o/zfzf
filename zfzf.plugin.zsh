@@ -97,12 +97,15 @@ function _zfzf () {
 
   local res
   res="$(
-    {
-      ls -1A --group-directories-first --color="$color" "$path_orig_absolute"
-      echo -e "..\n."
-    } 2>/dev/null \
+      ls -1Ap --color "$path_orig_absolute" \
+      | awk '
+          BEGIN { print ".\n.." }
+          /\/$/ { dirs = dirs $0 "\n"; next }
+          { print }
+          END { printf "%s", dirs }
+        ' \
       | fzf \
-          --tac --reverse --ansi --height='50%' \
+          --reverse --ansi --height='50%' \
           --header="$path_orig_absolute" --query="$fzf_query" \
           --print-query --cycle \
           --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U,alt-.,alt->' \
