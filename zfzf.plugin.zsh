@@ -20,9 +20,9 @@
 #
 # key bindings:
 #   - return:            accept final
-#   - alt-return:        accept final (absolute)
+#   - alt-return:        accept final (return absolute path)
 #   - esc:               escape
-#   - ctrl-g:            escape (absolute)
+#   - ctrl-g:            escape (return absolute path)
 #   - alt-o:             accept query
 #   - ctrl-d:            accept query final
 #   - alt-P              append query
@@ -32,14 +32,6 @@
 #   - alt-u:             ascend into parent directory
 #   - alt->:             ascend into parent directory
 #   - alt-U              ascend to next existing ancestor
-#   - ctrl-n:            select next
-#   - alt-n:             select next
-#   - tab:               select next
-#   - down:              select next
-#   - ctrl-p:            select prev
-#   - alt-p:             select prev
-#   - shift-tab:         select prev
-#   - up:                select prev
 function _zfzf () {
   local left="$LBUFFER"
   local right="$RBUFFER"
@@ -109,7 +101,7 @@ function _zfzf () {
           --header="$path_orig_absolute" --query="$fzf_query" \
           --print-query --cycle \
           --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U,alt-.,alt->' \
-          --bind='ctrl-o:replace-query,tab:down,btab:up,alt-n:down,alt-p:up' \
+          --bind='ctrl-o:replace-query' \
           --preview="bash -c '${fzf_preview[*]}'")"
 
   local -i code=$?
