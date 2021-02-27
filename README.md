@@ -38,18 +38,18 @@ Configuration Options
 
 Default Key Bindings
 
-  return:            accept final
-  alt-return:        accept final (return absolute path)
-  esc:               escape
-  ctrl-g:            escape (return absolute path)
-  alt-o:             accept query
-  ctrl-d:            accept query final
+  return             accept final
+  alt-return         accept final (return absolute path)
+  esc                escape
+  ctrl-g             escape (return absolute path)
+  alt-o              accept query
+  ctrl-d             accept query final
   alt-P              append query
-  ctrl-o:            replace query
-  alt-i:             descend into directory or accept file
-  alt-.:             descend into directory or accept file
-  alt-u:             ascend into parent directory
-  alt->:             ascend into parent directory
+  ctrl-o             replace query
+  alt-i              descend into directory or accept file
+  alt-.              descend into directory or accept file
+  alt-u              ascend into parent directory
+  alt->              ascend into parent directory
   alt-U              ascend to next existing ancestor
 
 ```
@@ -62,7 +62,7 @@ Default Key Bindings
   - [ ] key bindings
   - [ ] sorting
   - [ ] filtering
-  - [X] color
+  - [x] color
   - [ ] fzf options
 
 ## License
