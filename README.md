@@ -19,6 +19,8 @@ zinit light b0o/zfzf
 
 ```
 
+zfzf v0.0.0
+
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 

@@ -18,12 +18,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 function _zfzf () {
+  local version="v0.0.0"
+
   local opt OPTARG
   local -i OPTIND
   while getopts "h-" opt "$@"; do
     case "$opt" in
       h)
         cat <<EOF
+zfzf $version
+
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 
