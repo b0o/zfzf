@@ -185,6 +185,11 @@ function _zfzf () {
   fi
 }
 
+if [[ "${zsh_eval_context[*]}" == "toplevel" ]]; then
+  _zfzf "$@"
+  exit $?
+fi
+
 zle -N zfzf _zfzf
 
 if [[ "${ZFZF_DISABLE_BINDINGS:-0}" -eq 0 ]]; then
