@@ -37,7 +37,7 @@ Configuration Options
   ZFZF_NO_COLORS         0
     Disable colors.
 
-  ZFZF_DOTDOT_DOT        1
+  ZFZF_DOT_DOTDOT        1
     Don't display '.' and '..'.
 
   ZFZF_ZSH_BINDING       ^[. (Alt-.)
@@ -130,7 +130,7 @@ EOF
 
   local -a awk_opts=()
 
-  if [[ "${ZFZF_DOTDOT_DOT:-1}" -eq 1 ]]; then
+  if [[ "${ZFZF_DOT_DOTDOT:-1}" -eq 1 ]]; then
     awk_opts+=(-v 'dot_dotdot=.\n..\n')
   fi
 
