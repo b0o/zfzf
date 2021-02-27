@@ -17,22 +17,59 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#
-# key bindings:
-#   - return:            accept final
-#   - alt-return:        accept final (return absolute path)
-#   - esc:               escape
-#   - ctrl-g:            escape (return absolute path)
-#   - alt-o:             accept query
-#   - ctrl-d:            accept query final
-#   - alt-P              append query
-#   - ctrl-o:            replace query
-#   - alt-i:             descend into directory or accept file
-#   - alt-.:             descend into directory or accept file
-#   - alt-u:             ascend into parent directory
-#   - alt->:             ascend into parent directory
-#   - alt-U              ascend to next existing ancestor
 function _zfzf () {
+  local opt OPTARG
+  local -i OPTIND
+  while getopts "h-" opt "$@"; do
+    case "$opt" in
+      h)
+        cat <<EOF
+zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
+directory hierarchy and pick files using keybindings.
+
+Configuration Options
+  Environment Variable   Default Value
+
+  ZFZF_NO_COLORS         0
+    Disable colors.
+
+  ZFZF_DOTDOT_DOT        1
+    Don't display '.' and '..'.
+
+  ZFZF_ZSH_BINDING       ^[. (Ctrl-.)
+    Keybinding sequence to trigger zfzf. If set to the empty string, zfzf will
+    not be bound. You can create a keybinding yourself by binding to the _zfzf
+    function. See zshzle(1) for more information on key bindings.
+
+Default Key Bindings
+
+  return:            accept final
+  alt-return:        accept final (return absolute path)
+  esc:               escape
+  ctrl-g:            escape (return absolute path)
+  alt-o:             accept query
+  ctrl-d:            accept query final
+  alt-P              append query
+  ctrl-o:            replace query
+  alt-i:             descend into directory or accept file
+  alt-.:             descend into directory or accept file
+  alt-u:             ascend into parent directory
+  alt->:             ascend into parent directory
+  alt-U              ascend to next existing ancestor
+
+EOF
+        return 0
+        ;;
+      -)
+        break
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
   local left="$LBUFFER"
   local right="$RBUFFER"
   local input="$*"
