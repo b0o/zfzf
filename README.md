@@ -23,7 +23,7 @@ text as a path.
 
 ```
 
-zfzf v0.1.0
+zfzf v0.1.1
 
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
