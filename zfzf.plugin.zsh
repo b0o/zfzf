@@ -87,11 +87,17 @@ function _zfzf () {
     'bat --color='"$color"' "$f" 2>/dev/null || exa --tree --level=1 --color='"$color"' "$f" 2>/dev/null || stat "$f" 2>/dev/null'
   )
 
+  local -a awk_opts=()
+
+  if [[ "${ZFZF_DOTDOT_DOT:-1}" -eq 1 ]]; then
+    awk_opts+=(-v 'dot_dotdot=.\n..\n')
+  fi
+
   local res
   res="$(
       ls -1Ap --color "$path_orig_absolute" \
-      | awk '
-          BEGIN { print ".\n.." }
+      | awk "${awk_opts[@]}" '
+          BEGIN { printf "%s", dot_dotdot }
           /\/$/ { dirs = dirs $0 "\n"; next }
           { print }
           END { printf "%s", dirs }
