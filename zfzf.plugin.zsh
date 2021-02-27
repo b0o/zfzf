@@ -192,6 +192,6 @@ fi
 
 zle -N zfzf _zfzf
 
-if [[ "${ZFZF_DISABLE_BINDINGS:-0}" -eq 0 ]]; then
-  bindkey "^[." zfzf
+if [[ ! -v ZFZF_ZSH_BINDING || -n "${ZFZF_ZSH_BINDING}" ]]; then
+  bindkey "${ZFZF_ZSH_BINDING:-"^[."}" zfzf
 fi
