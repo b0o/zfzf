@@ -40,7 +40,7 @@ Configuration Options
   ZFZF_DOTDOT_DOT        1
     Don't display '.' and '..'.
 
-  ZFZF_ZSH_BINDING       ^[. (Ctrl-.)
+  ZFZF_ZSH_BINDING       ^[. (Alt-.)
     Keybinding sequence to trigger zfzf. If set to the empty string, zfzf will
     not be bound. You can create a keybinding yourself by binding to the _zfzf
     function. See zshzle(1) for more information on key bindings.
