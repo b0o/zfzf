@@ -62,7 +62,7 @@ Default Key Bindings
   - [ ] key bindings
   - [ ] sorting
   - [ ] filtering
-  - [ ] color
+  - [X] color
   - [ ] fzf options
 
 ## License
