@@ -16,7 +16,9 @@ zinit light b0o/zfzf
 ## Usage
 
 <!-- USAGE -->
+
 ```
+
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 
@@ -49,7 +51,9 @@ Default Key Bindings
   alt-u:             ascend into parent directory
   alt->:             ascend into parent directory
   alt-U              ascend to next existing ancestor
+
 ```
+
 <!-- /USAGE -->
 
 ## TODO
@@ -64,7 +68,9 @@ Default Key Bindings
 ## License
 
 <!-- LICENSE -->
+
 &copy; 2021 Maddison Hellstrom
 
 Released under the GNU General Public License, version 3.0 or later.
+
 <!-- /LICENSE -->

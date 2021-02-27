@@ -76,19 +76,19 @@ function section() {
   done
   shift $((OPTIND - 1))
 
-  local -a lines=()
+  local -a lines=('')
 
   if [[ $code -eq 1 ]]; then
-    lines+=('```'"${lang:-}")
+    lines+=('```'"${lang:-}" '')
   fi
 
   mapfile -tO ${#lines[@]} lines
 
   if [[ $code -eq 1 ]]; then
-    lines+=('```')
+    lines+=('' '```')
   fi
 
-  sections["$section"]="$(printf '%s\n' "${lines[@]}")"
+  sections["$section"]="$(printf '%s\n' "${lines[@]}")\n"
 }
 
 function regen_section() {
