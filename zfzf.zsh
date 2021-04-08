@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 function _zfzf () {
-  local version="v0.1.1"
+  local version="v0.1.2"
 
   local opt OPTARG
   local -i OPTIND
