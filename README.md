@@ -19,6 +19,9 @@ By default, zfzf is mapped to `Alt-period`. If your cursor is adjacent to any
 non-whitespace text when you trigger zfzf, it will attempt to interpret that
 text as a path.
 
+Please note that zfzf is still in the early stages of development. Its
+behaviors, options, and key bindings are likely to change.
+
 <!-- USAGE -->
 
 ```
@@ -29,18 +32,37 @@ zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 
 Configuration Options
-  Environment Variable   Default Value
+  Environment Variable          Default Value
 
-  ZFZF_NO_COLORS         0
-    Disable colors.
+  ZFZF_ENABLE_COLOR             1
+    When enabled, files and previews will be colorized.
 
-  ZFZF_DOT_DOTDOT        1
-    Don't display '.' and '..'.
+  ZFZF_ENABLE_PREVIEW           1
+    When enabled, the focused item will be displayed in the fzf preview window.
 
-  ZFZF_ZSH_BINDING       ^[. (Alt-.)
-    Keybinding sequence to trigger zfzf. If set to the empty string, zfzf will
-    not be bound. You can create a keybinding yourself by binding to the _zfzf
-    function. See zshzle(1) for more information on key bindings.
+  ZFZF_ENABLE_DOT_DOTDOT        1
+    When enabled, display '.' and '..' at the top of the file listing.
+
+  ZFZF_ZSH_BINDING              ^[. (Alt-.)
+    Sets the keybinding sequence used to trigger zfzf. If set to the empty
+    string, zfzf will not be bound. You can create a keybinding yourself by
+    binding to the zfzf zle widget. See zshzle(1) for more information on key
+    bindings.
+
+  ZFZF_ENABLE_BAT               2
+  ZFZF_ENABLE_EXA               2
+    These options control zfzf's use of non-standard programs. Valid values
+    include:
+      - 0: Disable program
+      - 1: Enable program (Force)
+      - 2: Enable program (Optional)
+    If the value 2 is used, the program will be enabled only if it is found in
+    the PATH or if its path is explicitly specified as described below.
+
+  ZFZF_BAT_PATH                 None
+  ZFZF_EXA_PATH                 None
+    These options allow paths to non-standard programs to be manually
+    specified.
 
 Default Key Bindings
 
