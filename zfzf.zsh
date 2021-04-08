@@ -44,9 +44,10 @@ Configuration Options
     When enabled, display '.' and '..' at the top of the file listing.
 
   ZFZF_ZSH_BINDING              ^[. (Alt-.)
-    Keybinding sequence to trigger zfzf. If set to the empty string, zfzf will
-    not be bound. You can create a keybinding yourself by binding to the zfzf
-    zle widget. See zshzle(1) for more information on key bindings.
+    Sets the keybinding sequence used to trigger zfzf. If set to the empty
+    string, zfzf will not be bound. You can create a keybinding yourself by
+    binding to the zfzf zle widget. See zshzle(1) for more information on key
+    bindings.
 
   ZFZF_ENABLE_BAT               2
   ZFZF_ENABLE_EXA               2
@@ -56,7 +57,7 @@ Configuration Options
       - 1: Enable program (Force)
       - 2: Enable program (Optional)
     If the value 2 is used, the program will be enabled only if it is found in
-    the PATH or if its path is explicitly specified.
+    the PATH or if its path is explicitly specified as described below.
 
   ZFZF_BAT_PATH                 None
   ZFZF_EXA_PATH                 None
