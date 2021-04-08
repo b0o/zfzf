@@ -32,18 +32,36 @@ zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 
 Configuration Options
-  Environment Variable   Default Value
+  Environment Variable          Default Value
 
-  ZFZF_NO_COLORS         0
-    Disable colors.
+  ZFZF_ENABLE_COLOR             1
+    When enabled, files and previews will be colorized.
 
-  ZFZF_DOT_DOTDOT        1
-    Don't display '.' and '..'.
+  ZFZF_ENABLE_PREVIEW           1
+    When enabled, the focused item will be displayed in the fzf preview window.
 
-  ZFZF_ZSH_BINDING       ^[. (Alt-.)
+  ZFZF_ENABLE_DOT_DOTDOT        1
+    When enabled, display '.' and '..' at the top of the file listing.
+
+  ZFZF_ZSH_BINDING              ^[. (Alt-.)
     Keybinding sequence to trigger zfzf. If set to the empty string, zfzf will
     not be bound. You can create a keybinding yourself by binding to the _zfzf
     function. See zshzle(1) for more information on key bindings.
+
+  ZFZF_ENABLE_BAT               2
+  ZFZF_ENABLE_EXA               2
+    These options control zfzf's use of non-standard programs. Valid values
+    include:
+      - 0: Disable program
+      - 1: Enable program (Force)
+      - 2: Enable program (Optional)
+    If the value 2 is used, the program will be enabled only if it is found in
+    the PATH or if its path is explicitly specified.
+
+  ZFZF_BAT_PATH                 None
+  ZFZF_EXA_PATH                 None
+    These options allow paths to non-standard programs to be manually
+    specified.
 
 Default Key Bindings
 
@@ -74,6 +92,84 @@ EOF
   done
   shift $((OPTIND - 1))
 
+
+  # --- Legacy Configuration Options --- #
+  if [[ -v ZFZF_NO_COLORS ]]; then
+    echo >&2
+    echo "Warning: ZFZF_NO_COLORS is deprecated in favor of ZFZF_ENABLE_COLOR." >&2
+    echo "See _zfzf -h for more information." >&2
+    zle reset-prompt
+    if [[ ! -v ZFZF_ENABLE_COLOR ]]; then
+      if [[ ZFZF_NO_COLORS -eq 1 ]]; then
+        local -i ZFZF_ENABLE_COLOR=0
+      else
+        local -i ZFZF_ENABLE_COLOR=1
+      fi
+    fi
+  fi
+
+  if [[ -v ZFZF_DOT_DOTDOT ]]; then
+    echo >&2
+    echo "Warning: ZFZF_DOT_DOTDOT is deprecated in favor of ZFZF_ENABLE_DOT_DOTDOT." >&2
+    echo "See _zfzf -h for more information." >&2
+    zle reset-prompt
+    if [[ ! -v ZFZF_ENABLE_DOT_DOTDOT ]]; then
+        local -i ZFZF_ENABLE_DOT_DOTDOT=$ZFZF_DOT_DOTDOT
+    fi
+  fi
+
+  # --- Configuration Options --- #
+  local -i enable_color=${ZFZF_ENABLE_COLOR:-1}
+  local -i enable_preview=${ZFZF_ENABLE_PREVIEW:-1}
+  local -i dot_dotdot=${ZFZF_DOT_DOTDOT:-1}
+
+  local -i enable_bat=${ZFZF_ENABLE_BAT:-2}
+  local bat_path="${ZFZF_BAT_PATH:-}"
+
+  local -i enable_exa=${ZFZF_ENABLE_EXA:-2}
+  local exa_path="${ZFZF_EXA_PATH:-}"
+
+  # --- Setup --- #
+  local color="never"
+  if [[ $enable_color -eq 1 ]]; then
+    color="always"
+  fi
+
+  local -A cmds=()
+
+  if [[ $enable_bat -ge 1 ]]; then
+    cmds[bat]="${bat_path:-${commands[bat]:-}}"
+    if [[ $enable_bat -eq 1 && -z "${cmds[bat]}" ]]; then
+      echo >&2
+      echo "Error: ZFZF_ENABLE_BAT is set but bat was not found in PATH" >&2
+      zle reset-prompt
+      return 1
+    fi
+    if [[ -z "${cmds[bat]:-}" ]]; then
+      unset "cmds[bat]"
+    fi
+  fi
+
+  if [[ $enable_exa -ge 1 ]]; then
+    cmds[exa]="${exa_path:-${commands[exa]:-}}"
+    if [[ $enable_exa -eq 1 && -z "${cmds[exa]}" ]]; then
+      echo >&2
+      echo "Error: ZFZF_ENABLE_EXA is set but exa was not found in PATH" >&2
+      zle reset-prompt
+      return 1
+    fi
+    if [[ -z "${cmds[exa]:-}" ]]; then
+      unset "cmds[exa]"
+    fi
+  fi
+
+  local -a awk_opts=()
+
+  if [[ "${ZFZF_DOT_DOTDOT:-1}" -eq 1 ]]; then
+    awk_opts+=(-v 'dot_dotdot=.\n..\n')
+  fi
+
+  # --- Shell Buffer Parsing --- #
   local left="$LBUFFER"
   local right="$RBUFFER"
   local input="$*"
@@ -95,6 +191,7 @@ EOF
     fi
   fi
 
+  # --- Path Resolution --- #
   local path_orig="${input:-}"
   path_orig=${~path_orig}     # expand tilde
   path_orig="${(e)path_orig}" # expand variables
@@ -108,6 +205,7 @@ EOF
     path_orig_absolute="$(realpath -m "${path_orig:-.}")"
   fi
 
+  # --- FZF Setup --- #
   local fzf_query=""
   if ! [[ -e "$path_orig_absolute" ]]; then
     fzf_query="$(basename "$path_orig")"
@@ -118,39 +216,65 @@ EOF
   LBUFFER="${left}${path_orig}"
   zle reset-prompt
 
-  local color="never"
-  if [[ "${ZFZF_NO_COLORS:-0}" -eq 0 ]]; then
-    color="always"
-  fi
-
-  local -a fzf_preview=(
-    'f="$(realpath -m "'"$path_orig_absolute"'/{}")";'
-    'bat --color='"$color"' "$f" 2>/dev/null || exa --tree --level=1 --color='"$color"' "$f" 2>/dev/null || stat "$f" 2>/dev/null'
+  local -a fzf_cmd=(
+    /usr/bin/env fzf
+      --reverse
+      --ansi
+      --print-query
+      --cycle
+      --height='50%'
+      --header="$path_orig_absolute"
+      --query="$fzf_query"
+      --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U,alt-.,alt->'
+      --bind='ctrl-o:replace-query'
   )
 
-  local -a awk_opts=()
+  if [[ $enable_preview -eq 1 ]]; then
+    local preview_file
+    if [[ ${+cmds[bat]} -eq 1 ]]; then
+      preview_file="${cmds[bat]} --color='$color'"
+    else
+      preview_file="${commands[cat]}"
+    fi
 
-  if [[ "${ZFZF_DOT_DOTDOT:-1}" -eq 1 ]]; then
-    awk_opts+=(-v 'dot_dotdot=.\n..\n')
+    local preview_dir
+    if [[ ${+cmds[exa]} -eq 1 ]]; then
+      preview_dir="${cmds[exa]} --tree --level=1 --color='$color'"
+    else
+      preview_dir="${commands[tree]} -L 1"
+    fi
+
+    local preview_other="stat '$f' 2>/dev/null"
+
+    local -a fzf_preview=(
+      'f="$(realpath -m "'"$path_orig_absolute"'/{}")";'
+      'if [[ -d "$f" ]]; then'
+        "$preview_dir"' "$f" 2>/dev/null;'
+      'elif [[ -f "$f" ]]; then'
+        "$preview_file"' "$f" 2>/dev/null;'
+      'else'
+        "$preview_other"' "$f" 2>/dev/null;'
+      'fi'
+    )
+
+    fzf_cmd+=(
+      --preview="bash -c '$fzf_preview'"
+    )
   fi
 
+  # --- FZF Run --- #
   local res
   res="$(
-      ls -1Ap --color "$path_orig_absolute" \
-      | awk "${awk_opts[@]}" '
+      "${commands[ls]}" -1Ap --color "$path_orig_absolute" \
+      | "${commands[awk]}" "${awk_opts[@]}" '
           BEGIN { printf "%s", dot_dotdot }
           /\/$/ { dirs = dirs $0 "\n"; next }
           { print }
           END { printf "%s", dirs }
         ' \
-      | fzf \
-          --reverse --ansi --height='50%' \
-          --header="$path_orig_absolute" --query="$fzf_query" \
-          --print-query --cycle \
-          --expect='ctrl-d,alt-return,ctrl-g,alt-P,alt-o,alt-i,alt-u,alt-U,alt-.,alt->' \
-          --bind='ctrl-o:replace-query' \
-          --preview="bash -c '${fzf_preview[*]}'")"
+      | "${fzf_cmd[@]}")"
 
+  # --- FZF Result Handling --- #
   local -i code=$?
 
   local path_new
@@ -198,6 +322,7 @@ EOF
     ;;
   esac
 
+  # --- Final Result Handling --- #
   if [[ "$key" != "alt-o" && "$key" != "ctrl-d" && $esc -eq 0 ]]; then
     path_new="${path_orig:+$path_orig/}${path_new}"
     path_new="$(realpath -m --relative-to="$relative" "${path_new:-.}")"
