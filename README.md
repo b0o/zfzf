@@ -1,6 +1,6 @@
-# zfzf [![version](https://img.shields.io/github/v/tag/b0o/zfzf?style=flat&color=yellow&label=version&sort=semver)](https://github.com/b0o/zfzf/releases) [![license: gpl-3.0-or-later](https://img.shields.io/github/license/b0o/zfzf?style=flat&color=green)](https://opensource.org/licenses/GPL-3.0)
+# zfzf [![version](https://img.shields.io/github/v/tag/b0o/zfzf?style=flat&color=yellow&label=version&sort=semver)](https://github.com/b0o/zfzf/releases) [![license: MIT](https://img.shields.io/github/license/b0o/zfzf?style=flat&color=green)](https://mit-license.org)
 
-> zsh + fzf
+> Zsh + fzf
 
 ## Demo
 
@@ -15,12 +15,33 @@ zinit light b0o/zfzf
 
 ## Usage
 
+zfzf can work in three ways:
+
+- as a standalone utlity by running the `zfzf` command
+- as a ZLE (zsh line editor) plugin via a keyboard shortcut
+- as a Zsh completion for file paths
+
+### As a standalone utility
+
+zfzf can be invoked by running the `zfzf` command and optionally passing a path
+as the first argument. The result will be printed to stdout.
+
+### As a ZLE plugin
+
 By default, zfzf is mapped to `Alt-period`. If your cursor is adjacent to any
 non-whitespace text when you trigger zfzf, it will attempt to interpret that
 text as a path.
 
-Please note that zfzf is still in the early stages of development. Its
-behaviors, options, and key bindings are likely to change.
+### As a Zsh completion function
+
+If you would like to use zfzf to complete filenames when you press tab, you
+should call the `enable-zfzf-tab` function in your `.zshrc`.
+
+If you use other completion plugins like fzf-tab, you should call
+`enable-zfzf-tab` after all other plugins have been loaded and enabled,
+otherwise another plugin may override zfzf.
+
+You can later call `disable-zfzf-tab` to restore the prior completion function.
 
 <!-- USAGE -->
 
@@ -97,7 +118,7 @@ Default Key Bindings
 ## TODO
 
 - [ ] configurable options
-  - [ ] key bindings
+  - [ ] fzf key bindings
   - [ ] sorting
   - [ ] filtering
   - [x] color
@@ -109,6 +130,6 @@ Default Key Bindings
 
 &copy; 2021 Maddison Hellstrom
 
-Released under the GNU General Public License, version 3.0 or later.
+Released under the MIT License.
 
 <!-- /LICENSE -->

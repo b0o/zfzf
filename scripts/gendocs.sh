@@ -42,7 +42,7 @@ function target_readme() {
   section -s LICENSE << EOF
 &copy; ${copyright_start}$( (($(date +%Y) == copyright_start)) || date +-%Y) Maddison Hellstrom
 
-Released under the GNU General Public License, version 3.0 or later.
+Released under the MIT License.
 EOF
 }
 
