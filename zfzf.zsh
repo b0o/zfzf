@@ -5,7 +5,7 @@
 # Copyright (C) 2021 Maddison Hellstrom <https://github.com/b0o>, MIT License.
 
 function zfzf () {
-  local version="v0.1.2"
+  local version="v0.2.0"
 
   local -i dirsonly=0
   local -i compactive=0
