@@ -31,6 +31,16 @@ zfzf v0.1.2
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
 
+zfzf can be used as a standalone program, as an explicit zle widget, and as a
+file path completion. By default, zfzf can be explicitly triggered with Alt-.
+(this is configurable with the ZFZF_ZSH_BINDING option).
+
+If you would like to use zfzf as your file completion when you press tab, you
+should call the enable-zfzf-tab function in your .zshrc. If you use other
+completion plugins like fzf-tab, you should call enable-zfzf-tab after all
+other plugins have been loaded and enabled. You can later call disable-zfzf-tab
+to restore the prior completion function.
+
 Configuration Options
   Environment Variable          Default Value
 

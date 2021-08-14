@@ -4,19 +4,41 @@
 #
 # Copyright (C) 2021 Maddison Hellstrom <https://github.com/b0o>, MIT License.
 
-function _zfzf () {
+function zfzf () {
   local version="v0.1.2"
+
+  local -i dirsonly=0
+  local -i compactive=0
+  local -i zle=0
+
+  if [[ -v LBUFFER && "$(typeset -p LBUFFER | sed 's/^typeset //; s/\S*=.*$//; s/[^r]//g')" == "r" ]]; then
+    compactive=1
+  fi
+  if zle reset-prompt 2>/dev/null; then
+    zle=1
+  fi
 
   local opt OPTARG
   local -i OPTIND
-  while getopts "h-" opt "$@"; do
-    case "$opt" in
-      h)
-        cat <<EOF
+  if [[ $compactive -eq 0 && $zle -eq 0 ]]; then
+    while getopts "h" opt "$@"; do
+      case "$opt" in
+        h)
+          cat <<EOF
 zfzf $version
 
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
 directory hierarchy and pick files using keybindings.
+
+zfzf can be used as a standalone program, as an explicit zle widget, and as a
+file path completion. By default, zfzf can be explicitly triggered with Alt-.
+(this is configurable with the ZFZF_ZSH_BINDING option).
+
+If you would like to use zfzf as your file completion when you press tab, you
+should call the enable-zfzf-tab function in your .zshrc. If you use other
+completion plugins like fzf-tab, you should call enable-zfzf-tab after all
+other plugins have been loaded and enabled. You can later call disable-zfzf-tab
+to restore the prior completion function.
 
 Configuration Options
   Environment Variable          Default Value
@@ -68,25 +90,29 @@ Default Key Bindings
   alt-U              ascend to next existing ancestor
 
 EOF
-        return 0
-        ;;
-      -)
-        break
-        ;;
-      *)
-        return 1
-        ;;
-    esac
-  done
-  shift $((OPTIND - 1))
-
+          return 0
+          ;;
+        /)
+          dirsonly=1
+          ;;
+        [f/gWFJV12nXMPSqrR])
+          ;;
+        \?)
+          return 1
+          ;;
+      esac
+    done
+    shift $((OPTIND - 1))
+  fi
 
   # --- Legacy Configuration Options --- #
   if [[ -v ZFZF_NO_COLORS ]]; then
     echo >&2
     echo "Warning: ZFZF_NO_COLORS is deprecated in favor of ZFZF_ENABLE_COLOR." >&2
-    echo "See _zfzf -h for more information." >&2
-    zle reset-prompt
+    echo "See zfzf -h for more information." >&2
+    if [[ $zle -eq 1 ]]; then
+      zle reset-prompt
+    fi
     if [[ ! -v ZFZF_ENABLE_COLOR ]]; then
       if [[ ZFZF_NO_COLORS -eq 1 ]]; then
         local -i ZFZF_ENABLE_COLOR=0
@@ -99,8 +125,10 @@ EOF
   if [[ -v ZFZF_DOT_DOTDOT ]]; then
     echo >&2
     echo "Warning: ZFZF_DOT_DOTDOT is deprecated in favor of ZFZF_ENABLE_DOT_DOTDOT." >&2
-    echo "See _zfzf -h for more information." >&2
-    zle reset-prompt
+    echo "See zfzf -h for more information." >&2
+    if [[ $zle -eq 1 ]]; then
+      zle reset-prompt
+    fi
     if [[ ! -v ZFZF_ENABLE_DOT_DOTDOT ]]; then
         local -i ZFZF_ENABLE_DOT_DOTDOT=$ZFZF_DOT_DOTDOT
     fi
@@ -130,7 +158,9 @@ EOF
     if [[ $enable_bat -eq 1 && -z "${cmds[bat]}" ]]; then
       echo >&2
       echo "Error: ZFZF_ENABLE_BAT is set but bat was not found in PATH" >&2
-      zle reset-prompt
+      if [[ $zle -eq 1 ]]; then
+        zle reset-prompt
+      fi
       return 1
     fi
     if [[ -z "${cmds[bat]:-}" ]]; then
@@ -143,7 +173,9 @@ EOF
     if [[ $enable_exa -eq 1 && -z "${cmds[exa]}" ]]; then
       echo >&2
       echo "Error: ZFZF_ENABLE_EXA is set but exa was not found in PATH" >&2
-      zle reset-prompt
+      if [[ $zle -eq 1 ]]; then
+        zle reset-prompt
+      fi
       return 1
     fi
     if [[ -z "${cmds[exa]:-}" ]]; then
@@ -152,15 +184,20 @@ EOF
   fi
 
   local -a awk_opts=()
-
   if [[ "${ZFZF_DOT_DOTDOT:-1}" -eq 1 ]]; then
     awk_opts+=(-v 'dot_dotdot=.\n..\n')
+  fi
+  if [[ $dirsonly -eq 1 ]]; then
+    awk_opts+=(-v 'dirsonly=1')
   fi
 
   # --- Shell Buffer Parsing --- #
   local left="$LBUFFER"
   local right="$RBUFFER"
-  local input="$*"
+  local input
+  if [[ $zle -eq 0 ]]; then
+    input="${1:-}"
+  fi
   if [[ -z "$input" && -n "$BUFFER" ]]; then
     zmodload -e zsh/pcre || zmodload zsh/pcre
 
@@ -178,11 +215,15 @@ EOF
       input="${input}${mat[1]//(#m)\\/}"
     fi
   fi
+  if [[ "$input" =~ ^- ]]; then
+    return
+  fi
 
   # --- Path Resolution --- #
   local path_orig="${input:-}"
   path_orig=${~path_orig}     # expand tilde
   path_orig="${(e)path_orig}" # expand variables
+  # " <--- this quote is here to work around a vim zsh syntax highlighting bug
 
   local path_orig_absolute
   local relative="$PWD"
@@ -201,8 +242,13 @@ EOF
     path_orig_absolute="$(dirname "$path_orig_absolute")"
   fi
 
-  LBUFFER="${left}${path_orig}"
-  zle reset-prompt
+  if [[ $compactive -eq 0 ]]; then
+    LBUFFER="${left}${path_orig}"
+  fi
+
+  if [[ $zle -eq 1 ]]; then
+    zle reset-prompt
+  fi
 
   local -a fzf_cmd=(
     /usr/bin/env fzf
@@ -257,7 +303,7 @@ EOF
       | "${commands[awk]}" "${awk_opts[@]}" '
           BEGIN { printf "%s", dot_dotdot }
           /\/$/ { dirs = dirs $0 "\n"; next }
-          { print }
+          ! dirsonly { print }
           END { printf "%s", dirs }
         ' \
       | "${fzf_cmd[@]}")"
@@ -336,21 +382,52 @@ EOF
     path_new="$input"
   fi
 
-  LBUFFER="${left}${path_new}"
-  RBUFFER="$right"
-  zle reset-prompt
+  if [[ $compactive -eq 0 ]]; then
+    LBUFFER="${left}${path_new}"
+    RBUFFER="$right"
+  fi
+
+  if [[ $zle -eq 1 ]]; then
+    zle reset-prompt
+  fi
 
   if [[ "$key" =~ ^alt-[uUoP\>]$ || ( "$key" =~ ^alt-[i.]$ && ( ! -e "$path_new" || -d "$path_new" ) ) ]]; then
-    _zfzf
+    zfzf "$path_new"
+    return
+  fi
+  if [[ $compactive -eq 1 ]]; then
+    builtin compadd -U -qS '' -- "$path_new"
+  elif [[ $zle -eq 0 ]]; then
+    echo "$path_new"
   fi
 }
 
+function disable-zfzf-tab() {
+  if [[ ! -v _zfzf_tab_files_orig ]]; then
+    echo "disable-zfzf-tab: error: zfzf tab not enabled or the original _files function was not found" >&2
+    return 1
+  fi
+  eval "$_zfzf_tab_files_orig"
+  unset _zfzf_tab_files_orig
+}
+
+function enable-zfzf-tab() {
+  if [[ -v _zfzf_tab_files_orig ]]; then
+    echo "enable-zfzf-tab: error: zfzf tab already enabled" >&2
+    return 1
+  fi
+  declare -g _zfzf_tab_files_orig="$(declare -f _files)"
+  function _files() {
+    zfzf '' "$@"
+  }
+}
+
 if [[ "${zsh_eval_context[*]}" == "toplevel" ]]; then
-  _zfzf "$@"
+  zfzf "$@"
   exit $?
 fi
 
-zle -N zfzf _zfzf
+zle -N zfzf zfzf
 
 if [[ ! -v ZFZF_ZSH_BINDING || -n "${ZFZF_ZSH_BINDING}" ]]; then
   bindkey "${ZFZF_ZSH_BINDING:-"^[."}" zfzf
