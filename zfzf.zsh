@@ -403,20 +403,30 @@ EOF
 }
 
 function disable-zfzf-tab() {
-  if [[ ! -v _zfzf_tab_files_orig ]]; then
-    echo "disable-zfzf-tab: error: zfzf tab not enabled or the original _files function was not found" >&2
+  if ! [[ -v _zfzf_tab && "${_zfzf_tab[enabled]}" -eq 1 ]]; then
+    echo "disable-zfzf-tab: error: zfzf is not enabled" >&2
     return 1
   fi
-  eval "$_zfzf_tab_files_orig"
-  unset _zfzf_tab_files_orig
+  if [[ ! -v _zfzf_tab[_files_orig] ]]; then
+    echo "disable-zfzf-tab: error: the original _files function was not found" >&2
+    return 1
+  fi
+
+  eval "${_zfzf_tab[_files_orig]}"
+
+  unset _zfzf_tab
 }
 
 function enable-zfzf-tab() {
-  if [[ -v _zfzf_tab_files_orig ]]; then
+  if [[ -v _zfzf_tab && "${_zfzf_tab[enabled]}" -eq 1 ]]; then
     echo "enable-zfzf-tab: error: zfzf tab already enabled" >&2
     return 1
   fi
-  declare -g _zfzf_tab_files_orig="$(declare -f _files)"
+  if [[ ! -v _zfzf_tab ]]; then
+    declare -gA _zfzf_tab=()
+  fi
+  zfzf_tab[enabled]=1
+  zfzf_tab[_files_orig]="$(declare -f _files)"
   function _files() {
     zfzf '' "$@"
   }
