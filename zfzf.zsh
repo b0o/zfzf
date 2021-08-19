@@ -7,24 +7,14 @@
 function zfzf () {
   local version="v0.2.0"
 
-  local -i dirsonly=0
-  local -i compactive=0
-  local -i zle=0
-
-  if [[ -v LBUFFER && "$(typeset -p LBUFFER | sed 's/^typeset //; s/\S*=.*$//; s/[^r]//g')" == "r" ]]; then
-    compactive=1
-  fi
-  if zle reset-prompt 2>/dev/null; then
-    zle=1
-  fi
+  local mode="standalone"
 
   local opt OPTARG
   local -i OPTIND
-  if [[ $compactive -eq 0 && $zle -eq 0 ]]; then
-    while getopts "h" opt "$@"; do
-      case "$opt" in
-        h)
-          cat <<EOF
+  while getopts "hcz" opt "$@"; do
+    case "$opt" in
+      h)
+        cat <<EOF
 zfzf $version
 
 zfzf is a fzf-based file picker for zsh which allows you to easily navigate the
@@ -90,20 +80,22 @@ Default Key Bindings
   alt-U              ascend to next existing ancestor
 
 EOF
-          return 0
-          ;;
-        /)
-          dirsonly=1
-          ;;
-        [f/gWFJV12nXMPSqrR])
-          ;;
-        \?)
-          return 1
-          ;;
-      esac
-    done
-    shift $((OPTIND - 1))
-  fi
+        return 0
+        ;;
+      c)
+        mode="completion"
+        ;;
+      z)
+        mode="zle"
+        ;;
+      \?)
+        return 1
+        ;;
+    esac
+  done
+
+  local -a opts=("${@:1:$((OPTIND-1))}")
+  shift $((OPTIND - 1))
 
   # --- Legacy Configuration Options --- #
   if [[ -v ZFZF_NO_COLORS ]]; then
@@ -191,32 +183,27 @@ EOF
     awk_opts+=(-v 'dirsonly=1')
   fi
 
-  # --- Shell Buffer Parsing --- #
-  local left="$LBUFFER"
-  local right="$RBUFFER"
-  local input
-  if [[ $zle -eq 0 ]]; then
-    input="${1:-}"
-  fi
-  if [[ -z "$input" && -n "$BUFFER" ]]; then
-    zmodload -e zsh/pcre || zmodload zsh/pcre
-
-    # Split before word adjacent to the left of the cursor
-    pcre_compile -- '^(?U)((.*\s+)*)((\S|\\\s)+)$'
-    if [[ -n "$LBUFFER" ]] && pcre_match -a mat -- "$LBUFFER"; then
-      input="${mat[3]//(#m)\\/}"
-      left="${LBUFFER:0:$((${#LBUFFER} - ${#input}))}"
+  local input="${1:-}"
+  local left=""
+  local right=""
+  if [[ -z "$input" && "$mode" =~ completion\|zle && -n "$LBUFFER$RBUFFER" ]]; then
+    zmodload zsh/pcre
+    if [[ -n "$LBUFFER" ]]; then
+      # Split before word left-adjacent to the cursor
+      pcre_compile -- '^(?U)((.*\s+)*)((\S|\\\s)+)$'
+      if pcre_match -a mat -- "$LBUFFER"; then
+        input="${mat[3]//(#m)\\/}"
+        left="${LBUFFER:0:$((${#LBUFFER} - ${#input}))}"
+      fi
     fi
-
-    # Split after word adjacent to the right of the cursor
-    pcre_compile -- '^((\\\s|\S)+)((\s+.*)*)$'
-    if [[ -n "$RBUFFER" ]] && pcre_match -a mat -- "$RBUFFER"; then
-      right="${mat[3]}"
-      input="${input}${mat[1]//(#m)\\/}"
+    if [[ -n "$RBUFFER" ]]; then
+      # Split after word right-adjacent to the cursor
+      pcre_compile -- '^((\\\s|\S)+)((\s+.*)*)$'
+      if pcre_match -a mat -- "$RBUFFER"; then
+        input="${input}${mat[1]//(#m)\\/}"
+        right="${mat[3]}"
+      fi
     fi
-  fi
-  if [[ "$input" =~ ^- ]]; then
-    return
   fi
 
   # --- Path Resolution --- #
@@ -242,11 +229,8 @@ EOF
     path_orig_absolute="$(dirname "$path_orig_absolute")"
   fi
 
-  if [[ $compactive -eq 0 ]]; then
+  if [[ "$mode" == "zle" ]]; then
     LBUFFER="${left}${path_orig}"
-  fi
-
-  if [[ $zle -eq 1 ]]; then
     zle reset-prompt
   fi
 
@@ -382,22 +366,20 @@ EOF
     path_new="$input"
   fi
 
-  if [[ $compactive -eq 0 ]]; then
+  if [[ "$mode" == "zle" ]]; then
     LBUFFER="${left}${path_new}"
     RBUFFER="$right"
-  fi
-
-  if [[ $zle -eq 1 ]]; then
     zle reset-prompt
   fi
 
   if [[ "$key" =~ ^alt-[uUoP\>]$ || ( "$key" =~ ^alt-[i.]$ && ( ! -e "$path_new" || -d "$path_new" ) ) ]]; then
-    zfzf "$path_new"
+    zfzf "${opts[@]}" "$path_new"
     return
   fi
-  if [[ $compactive -eq 1 ]]; then
-    builtin compadd -U -qS '' -- "$path_new"
-  elif [[ $zle -eq 0 ]]; then
+  if [[ "$mode" == "completion" ]]; then
+    builtin compadd -UQqS '' -- "$path_new"
+  fi
+  if [[ "$mode" == "standalone" ]]; then
     echo "$path_new"
   fi
 }
@@ -411,9 +393,12 @@ function disable-zfzf-tab() {
     echo "disable-zfzf-tab: error: the original _files function was not found" >&2
     return 1
   fi
-
+  if [[ ! -v _zfzf_tab[_path_files_orig] ]]; then
+    echo "disable-zfzf-tab: error: the original _path_files function was not found" >&2
+    return 1
+  fi
   eval "${_zfzf_tab[_files_orig]}"
-
+  eval "${_zfzf_tab[_path_files_orig]}"
   unset _zfzf_tab
 }
 
@@ -425,10 +410,14 @@ function enable-zfzf-tab() {
   if [[ ! -v _zfzf_tab ]]; then
     declare -gA _zfzf_tab=()
   fi
-  zfzf_tab[enabled]=1
-  zfzf_tab[_files_orig]="$(declare -f _files)"
+  _zfzf_tab[enabled]=1
+  _zfzf_tab[_files_orig]="$(declare -f _files)"
+  _zfzf_tab[_path_files_orig]="$(declare -f _path_files)"
   function _files() {
-    zfzf '' "$@"
+    zfzf -c
+  }
+  function _path_files() {
+    zfzf -c
   }
 }
 
@@ -437,7 +426,11 @@ if [[ "${zsh_eval_context[*]}" == "toplevel" ]]; then
   exit $?
 fi
 
-zle -N zfzf zfzf
+function _zfzf() {
+  zfzf -z "$@"
+}
+
+zle -N zfzf _zfzf
 
 if [[ ! -v ZFZF_ZSH_BINDING || -n "${ZFZF_ZSH_BINDING}" ]]; then
   bindkey "${ZFZF_ZSH_BINDING:-"^[."}" zfzf
