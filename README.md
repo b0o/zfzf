@@ -19,7 +19,7 @@ zfzf can work in three ways:
 
 - as a standalone utlity by running the `zfzf` command
 - as a ZLE (zsh line editor) plugin via a keyboard shortcut
-- as a Zsh completion for file paths
+- as a Zsh completion for file paths (experimental and buggy)
 
 ### As a standalone utility
 
