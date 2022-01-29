@@ -4,7 +4,7 @@
 
 ## Demo
 
-![demonstration screencast](./assets/demo-01.gif)
+![demonstration screencast](https://user-images.githubusercontent.com/21299126/151639939-0709d636-52e6-45fd-af19-6ce49671c47a.gif)
 
 ## Install
 
