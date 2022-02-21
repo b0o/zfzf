@@ -366,6 +366,10 @@ EOF
     path_new="$input"
   fi
 
+  if [[ -d "${path_new}" ]]; then
+    path_new="${path_new}/"
+  fi
+
   if [[ "$mode" == "zle" ]]; then
     LBUFFER="${left}${path_new}"
     RBUFFER="$right"
