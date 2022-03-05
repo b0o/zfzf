@@ -129,7 +129,7 @@ EOF
   # --- Configuration Options --- #
   local -i enable_color=${ZFZF_ENABLE_COLOR:-1}
   local -i enable_preview=${ZFZF_ENABLE_PREVIEW:-1}
-  local -i dot_dotdot=${ZFZF_DOT_DOTDOT:-1}
+  local -i dot_dotdot=${ZFZF_ENABLE_DOT_DOTDOT:-1}
 
   local -i enable_bat=${ZFZF_ENABLE_BAT:-2}
   local bat_path="${ZFZF_BAT_PATH:-}"
@@ -176,7 +176,7 @@ EOF
   fi
 
   local -a awk_opts=()
-  if [[ "${ZFZF_DOT_DOTDOT:-1}" -eq 1 ]]; then
+  if [[ "${ZFZF_ENABLE_DOT_DOTDOT:-1}" -eq 1 ]]; then
     awk_opts+=(-v 'dot_dotdot=.\n..\n')
   fi
   if [[ $dirsonly -eq 1 ]]; then
